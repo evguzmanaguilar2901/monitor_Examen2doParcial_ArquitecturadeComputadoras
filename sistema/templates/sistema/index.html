@@ -1,0 +1,251 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Monitor del Sistema</title>
+  <style>
+    /* Paleta de colores */
+    :root {
+      --primary-bg: #f3d9ff;
+      --card-bg: #e5b3fe;
+      --text-dark: #c263f9;
+      --accent: #830cc4;
+      --white: #ffffff;
+      --light-gray: #f1f1f1;
+    }
+
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background-color: var(--primary-bg);
+      padding: 20px;
+      margin: 0;
+      color: var(--text-dark);
+      transition: background-color 0.3s ease;
+    }
+
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+
+    header {
+      text-align: center;
+      margin-bottom: 20px;
+    }
+
+    h1 {
+      color: var(--accent);
+      font-size: 2.5em;
+      margin-bottom: 10px;
+      text-shadow: 2px 2px 4px rgba(0,0,0,0.1);
+    }
+
+    .controls {
+      display: flex;
+      justify-content: center;
+      gap: 15px;
+      margin-bottom: 20px;
+      flex-wrap: wrap;
+    }
+
+    .controls button,
+    .controls select {
+      padding: 8px 16px;
+      border: none;
+      border-radius: 20px;
+      background-color: var(--accent);
+      color: white;
+      cursor: pointer;
+      font-weight: bold;
+      transition: all 0.3s ease;
+    }
+
+    .controls button:hover,
+    .controls select:hover {
+      background-color: #6a05a0;
+      transform: scale(1.05);
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 15px;
+      margin-top: 20px;
+    }
+
+    .card {
+      background-color: var(--card-bg);
+      border: 2px solid var(--accent);
+      border-radius: 12px;
+      padding: 15px;
+      box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+      transition: transform 0.3s ease, box-shadow 0.3s ease;
+      animation: fadeInUp 0.5s ease-out;
+    }
+
+    .card:hover {
+      transform: translateY(-5px) scale(1.02);
+      box-shadow: 0 8px 16px rgba(0,0,0,0.15);
+    }
+
+    .card-title {
+      font-size: 1.2em;
+      font-weight: bold;
+      color: var(--accent);
+      margin-bottom: 10px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .card-title::before {
+      content: "";
+      width: 8px;
+      height: 8px;
+      background-color: var(--accent);
+      border-radius: 50%;
+    }
+
+    .big {
+      font-size: 1.8em;
+      font-weight: 700;
+      color: var(--text-dark);
+      margin: 10px 0;
+    }
+
+    .muted {
+      color: #666;
+      font-size: 0.9em;
+      line-height: 1.4;
+    }
+
+    .footer {
+      text-align: center;
+      margin-top: 40px;
+      padding: 15px;
+      background-color: var(--card-bg);
+      border-top: 2px solid var(--accent);
+      color: var(--text-dark);
+      font-size: 0.9em;
+    }
+
+    /* Animaciones */
+    @keyframes fadeInUp {
+      from {
+        opacity: 0;
+        transform: translateY(20px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .card:nth-child(1) { animation-delay: 0.1s; }
+    .card:nth-child(2) { animation-delay: 0.2s; }
+    .card:nth-child(3) { animation-delay: 0.3s; }
+    .card:nth-child(4) { animation-delay: 0.4s; }
+
+    /* Responsive */
+    @media (max-width: 768px) {
+      .grid {
+        grid-template-columns: 1fr;
+      }
+      h1 {
+        font-size: 2em;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>📊 Monitor del Sistema</h1>
+    </header>
+
+    <div class="controls">
+      <form method="get" style="display:inline">
+        <button type="submit">🔄 Actualizar</button>
+      </form>
+      <label>
+        Auto-refresh:
+        <select id="autoInterval">
+          <option value="0">Off</option>
+          <option value="5">5s</option>
+          <option value="10">10s</option>
+        </select>
+      </label>
+    </div>
+
+    <div class="grid">
+      <!-- CPU -->
+      <div class="card">
+        <div class="card-title">CPU</div>
+        <div class="big">{{ cpu_percent|default:"N/A" }}%</div>
+        <div class="muted">
+          Núcleos (lógicos/físicos): 
+          {{ sysinfo.cpu_logical|default:"N/A" }} / {{ sysinfo.cpu_physical|default:"N/A" }}
+        </div>
+      </div>
+
+      <!-- Memoria RAM -->
+      <div class="card">
+        <div class="card-title">Memoria RAM</div>
+        {% if mem %}
+          <div class="big">
+            {{ mem.used_gb|default:"N/A" }} GB / {{ mem.total_gb|default:"N/A" }} GB
+          </div>
+          <div class="muted">Uso: {{ mem.percent }}%</div>
+        {% else %}
+          <div class="big">N/A</div>
+        {% endif %}
+      </div>
+
+      <!-- Disco (/) -->
+      <div class="card">
+        <div class="card-title">Disco (/)</div>
+        {% if disk %}
+          <div class="big">
+            {{ disk.used_gb|default:"N/A" }} / {{ disk.total_gb|default:"N/A" }} GB
+          </div>
+          <div class="muted">
+            Libre: {{ disk.free_gb|default:"N/A" }} GB ({{ disk.percent }}%)
+          </div>
+        {% else %}
+          <div class="big">N/A</div>
+        {% endif %}
+      </div>
+
+      <!-- Sistema -->
+      <div class="card">
+        <div class="card-title">Sistema</div>
+        {% if sysinfo %}
+          <div class="muted">
+            {{ sysinfo.platform }} {{ sysinfo.platform_release }} ({{ sysinfo.architecture }})
+          </div>
+          <div class="muted">Procesador: {{ sysinfo.processor|default:"N/A" }}</div>
+        {% else %}
+          <div class="big">N/A</div>
+        {% endif %}
+      </div>
+    </div>
+
+    <div class="footer">
+      ©Elsy Vanessa Guzmán Aguilar
+    </div>
+  </div>
+
+  <script>
+    // Auto refresh logic
+    let timer = null;
+    document.getElementById('autoInterval').addEventListener('change', function(e) {
+      const val = Number(this.value);
+      if (timer) clearInterval(timer);
+      if (val > 0) {
+        timer = setInterval(() => location.reload(), val * 1000);
+      }
+    });
+  </script>
+</body>
+</html>
